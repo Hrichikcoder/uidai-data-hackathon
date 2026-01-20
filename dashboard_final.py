@@ -149,7 +149,7 @@ page = st.sidebar.radio("Mission Control",
      " Multivariate & Statistical Lab", 
      " Anomaly Detection", 
      " Volume Forecasting",
-     " Advanced Plotter",
+     " Advanced Plotter", 
      " Processed Data Menu"])
 
 st.sidebar.markdown("---")
@@ -181,35 +181,33 @@ if page == " Operational Overview":
     col_e1, col_e2 = st.columns(2)
     
     if not df_enrol.empty:
-        state_enrol = df_enrol.groupby('state')[['age_0_5', 'age_18_greater']].sum().reset_index()
-        state_enrol['Total'] = state_enrol['age_0_5'] + state_enrol['age_18_greater']
+        # Correctly calculating Total Enrollment (0-5 + 5-17 + 18+)
+        state_enrol = df_enrol.groupby('state')[['age_0_5', 'age_5_17', 'age_18_greater']].sum().reset_index()
+        state_enrol['Total'] = state_enrol['age_0_5'] + state_enrol['age_5_17'] + state_enrol['age_18_greater']
         
-        # Chart 1: Child Enrollment % (Updated to Percentage)
+        # Chart 1: Child Enrollment Share (Percentage) - Kept Formatting
         with col_e1:
-            # Calculate Percentage
             state_enrol['child_ratio'] = (state_enrol['age_0_5'] / state_enrol['Total']) * 100
-            
-            # Sort by Percentage
             top_fresh = state_enrol.sort_values('child_ratio', ascending=False).head(10)
             
             fig_fresh = px.bar(top_fresh, x='state', y='child_ratio', 
                                title="Child Enrollment Share (%)",
-                               labels={'child_ratio': '% Children in New Enrollments'},
+                               labels={'child_ratio': 'Child Share %'},
                                color='child_ratio', color_continuous_scale='Teal', template=plot_theme)
             st.plotly_chart(fig_fresh, width="stretch")
             show_insight(
-                "We check the share of children (age 0-5) in total fresh enrollments.<br>Formula:<br>Child Share % = age_0_5 ÷ Total Enrollments × 100<br>High % = healthy birth registration linkage.",
-                "If Child Share is low (<20%), it means the state is still doing too many adult enrollments (catch-up mode).<br>Target: Maintain Child Share > 60%."
+                "We check the share of children (age 0-5) in TOTAL fresh enrollments.<br>Formula:<br>Child Share % = age_0_5 ÷ (age_0_5 + age_5_17 + age_18+) × 100",
+                "If Child Share is low (<20%), it means the state is doing too many adult enrollments (catch-up mode).<br>Target: Maintain Child Share > 60%."
             )
         
-        # Chart 2: High Adult Enrollment Risk
+        # Chart 2: High Adult Enrollment Risk (Percentage)
         with col_e2:
             state_enrol['adult_ratio'] = (state_enrol['age_18_greater'] / state_enrol['Total']) * 100
             top_adult = state_enrol[state_enrol['Total'] > 1000].sort_values('adult_ratio', ascending=False).head(10)
             
             fig_adult = px.bar(top_adult, x='state', y='adult_ratio',
-                               title="High Adult Enrollment Risk",
-                               labels={'adult_ratio': '% Adults in New Enrollments'},
+                               title="High Adult Enrollment Risk (%)",
+                               labels={'adult_ratio': 'Adult Share %'},
                                color='adult_ratio', color_continuous_scale='Redor', template=plot_theme)
             st.plotly_chart(fig_adult, width="stretch")
             show_insight(
